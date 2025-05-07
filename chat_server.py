@@ -1,51 +1,34 @@
 import asyncio
 import websockets
-import os
+from aiohttp import web
 
-clients = []
+clients = set()
 
-# Handle incoming WebSocket connections
-async def handle(websocket):  # No 'path' needed for newer versions
+async def websocket_handler(websocket, path):
+    clients.add(websocket)
     try:
-        username = await websocket.recv()
-        # Ignore HTTP connections that are not real WebSocket requests
-        if username.startswith("GET") or username.startswith("HEAD") or "HTTP" in username:
-            print("Ignored HTTP client:", username)
-            await websocket.close()
-            return
-
-        clients.append(websocket)
-        print(f"{username} connected.")
-        await broadcast(f"{username} joined the chat!")
-
-        while True:
-            message = await websocket.recv()
-            if message:
-                await broadcast(message)
-
-    except Exception as e:
-        print("Error in handle():", e)
+        async for message in websocket:
+            await asyncio.wait([client.send(message) for client in clients if client != websocket])
     finally:
-        if websocket in clients:
-            clients.remove(websocket)
-        await websocket.close()
-        await broadcast(f"{username} has left the chat.")
+        clients.remove(websocket)
 
-# Broadcast message to all connected clients
-async def broadcast(message):
-    for client in clients:
-        try:
-            await client.send(message)
-        except Exception as e:
-            print(f"Error broadcasting message: {e}")
+async def health_check(request):
+    return web.Response(text="OK")  # Handles GET/HEAD requests for Render health checks
 
-# Start the WebSocket server
-async def main():
-    port = int(os.environ.get("PORT", 55555))
-    async with websockets.serve(handle, "0.0.0.0", port):
-        print(f"WebSocket server running on port {port}...")
-        await asyncio.Future()  # run forever
+async def start_servers():
+    # HTTP server for Render health checks
+    app = web.Application()
+    app.router.add_get('/', health_check)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', 10000)  # HTTP on port 10000
+    await site.start()
 
-# Run the server
-if __name__ == "__main__":
-    asyncio.run(main())
+    # WebSocket server
+    websocket_server = await websockets.serve(websocket_handler, '0.0.0.0', 10001)  # WebSocket on port 10001
+
+    print("HTTP + WebSocket servers running...")
+    await asyncio.Future()  # keep running
+
+if __name__ == '__main__':
+    asyncio.run(start_servers())
