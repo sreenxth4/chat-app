@@ -1,29 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Chat Client</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
             background-color: #f4f4f4;
+            padding: 20px;
         }
         #chatBox {
-            width: 100%;
             height: 300px;
             overflow-y: scroll;
             border: 1px solid #ccc;
+            background-color: #fff;
             padding: 10px;
             margin-bottom: 10px;
-            background-color: #fff;
         }
         input, button {
-            width: 100%;
             padding: 10px;
             margin: 5px 0;
+            width: 100%;
             font-size: 16px;
         }
         button:disabled {
@@ -32,7 +30,6 @@
     </style>
 </head>
 <body>
-
     <h1>Chat Room</h1>
     <div id="chatBox"></div>
     <input type="text" id="username" placeholder="Enter your username" />
@@ -40,29 +37,26 @@
     <button id="sendMessage" disabled>Send</button>
 
     <script>
-        const socket = new WebSocket('wss://your-app-name.onrender.com:55555');
+        const socket = new WebSocket('wss://chat-server-abc.onrender.com');  // <-- Replace with your Render URL
         let username = '';
-    
+
         socket.onopen = function () {
             console.log("Connected to the server");
-    
-            const sendButton = document.getElementById('sendMessage');
-            sendButton.disabled = false;
-    
-            sendButton.onclick = function () {
+            document.getElementById('sendMessage').disabled = false;
+
+            document.getElementById('sendMessage').onclick = function () {
                 const messageInput = document.getElementById('message');
                 const usernameInput = document.getElementById('username');
-    
-                // If username is not already sent, get it and send it once
+
                 if (!username) {
                     if (usernameInput.value.trim() === '') {
                         alert("Please enter your username.");
                         return;
                     }
                     username = usernameInput.value.trim();
-                    socket.send(username);  // Send username first
+                    socket.send(username);
                 }
-    
+
                 const message = messageInput.value.trim();
                 if (message) {
                     socket.send(`${username}: ${message}`);
@@ -70,23 +64,22 @@
                 }
             };
         };
-    
+
         socket.onmessage = function (event) {
             const chatBox = document.getElementById('chatBox');
-            chatBox.innerHTML += `<p>${event.data}</p>`;
+            chatBox.innerHTML += `<div>${event.data}</div>`;
             chatBox.scrollTop = chatBox.scrollHeight;
         };
-    
+
         socket.onerror = function (error) {
-            console.log("WebSocket Error:", error);
-            alert("Error with WebSocket connection.");
+            console.error("WebSocket Error:", error);
+            alert("WebSocket connection error.");
         };
 
         socket.onclose = function (event) {
-            console.log("WebSocket connection closed:", event);
+            console.warn("WebSocket connection closed:", event);
             alert("Connection closed by server.");
         };
     </script>
-
 </body>
 </html>
