@@ -5,7 +5,7 @@ import os
 clients = []
 
 # Handle incoming WebSocket connections
-async def handle(websocket, path):  # Add 'path' parameter here
+async def handle(websocket):  # No 'path' needed for newer versions
     try:
         username = await websocket.recv()
         # Ignore HTTP connections that are not real WebSocket requests
@@ -41,11 +41,11 @@ async def broadcast(message):
 
 # Start the WebSocket server
 async def main():
-    port = int(os.environ.get("PORT", 55555))  # Use fixed port for WebSocket
+    port = int(os.environ.get("PORT", 55555))
     async with websockets.serve(handle, "0.0.0.0", port):
         print(f"WebSocket server running on port {port}...")
         await asyncio.Future()  # run forever
 
-# Run the WebSocket server
+# Run the server
 if __name__ == "__main__":
     asyncio.run(main())
