@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Client</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        #chatBox {
+            width: 100%;
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #fff;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            font-size: 16px;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Chat Room</h1>
+    <div id="chatBox"></div>
+    <input type="text" id="username" placeholder="Enter your username" />
+    <input type="text" id="message" placeholder="Type a message" />
+    <button id="sendMessage" disabled>Send</button>
+
+    <script>
+        const socket = new WebSocket('ws://localhost:55555');
+        let username = '';
+    
+        socket.onopen = function () {
+            console.log("Connected to the server");
+    
+            const sendButton = document.getElementById('sendMessage');
+            sendButton.disabled = false;
+    
+            sendButton.onclick = function () {
+                const messageInput = document.getElementById('message');
+                const usernameInput = document.getElementById('username');
+    
+                // If username is not already sent, get it and send it once
+                if (!username) {
+                    if (usernameInput.value.trim() === '') {
+                        alert("Please enter your username.");
+                        return;
+                    }
+                    username = usernameInput.value.trim();
+                    socket.send(username);  // Send username first
+                }
+    
+                const message = messageInput.value.trim();
+                if (message) {
+                    socket.send(`${username}: ${message}`);
+                    messageInput.value = '';
+                }
+            };
+        };
+    
+        socket.onmessage = function (event) {
+            const chatBox = document.getElementById('chatBox');
+            chatBox.innerHTML += `<p>${event.data}</p>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+    
+        socket.onerror = function (error) {
+            console.log("WebSocket Error:", error);
+        };
+    </script>
+    
+
+</body>
+</html>
