@@ -40,7 +40,7 @@
     <button id="sendMessage" disabled>Send</button>
 
     <script>
-        const socket = new WebSocket('ws://localhost:55555');
+        const socket = new WebSocket('wss://your-app-name.onrender.com:55555');
         let username = '';
     
         socket.onopen = function () {
@@ -79,9 +79,14 @@
     
         socket.onerror = function (error) {
             console.log("WebSocket Error:", error);
+            alert("Error with WebSocket connection.");
+        };
+
+        socket.onclose = function (event) {
+            console.log("WebSocket connection closed:", event);
+            alert("Connection closed by server.");
         };
     </script>
-    
 
 </body>
 </html>
